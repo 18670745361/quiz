@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>发展心理学刷题</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: #f2f4f8; color: #1f2937;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    background: #4f46e5; color: #fff;
+    padding: 14px 16px; text-align: center;
+    font-size: 17px; font-weight: 600;
+    box-shadow: 0 2px 8px rgba(79,70,229,.25);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .progress-bar {
+    height: 4px; background: rgba(255,255,255,.3);
+    margin-top: 8px; border-radius: 2px; overflow: hidden;
+  }
+  .progress-bar span {
+    display: block; height: 100%; width: 0%;
+    background: #a5b4fc; border-radius: 2px;
+    transition: width .3s ease;
+  }
+  main { flex: 1; padding: 16px; display: flex; flex-direction: column; }
+  .card {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.06);
+    padding: 22px 18px; margin-bottom: 14px;
+    flex: 1; display: flex; flex-direction: column;
+  }
+  .tag {
+    display: inline-block; font-size: 12px;
+    color: #4f46e5; background: #eef2ff;
+    padding: 3px 10px; border-radius: 999px;
+    margin-bottom: 14px; align-self: flex-start;
+  }
+  .question {
+    font-size: 19px; font-weight: 600;
+    line-height: 1.55; color: #111827;
+  }
+  .answer {
+    margin-top: 18px; padding-top: 16px;
+    border-top: 1px dashed #e5e7eb;
+    font-size: 16px; line-height: 1.75; color: #374151;
+    white-space: pre-wrap; display: none;
+  }
+  .answer.show { display: block; animation: fade .25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .hint {
+    margin-top: 16px; font-size: 14px; color: #9ca3af;
+    text-align: center;
+  }
+  .actions { display: flex; gap: 10px; }
+  button {
+    flex: 1; border: none; border-radius: 12px;
+    padding: 15px 8px; font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: transform .1s, opacity .2s;
+    font-family: inherit;
+  }
+  button:active { transform: scale(.97); }
+  .btn-show { background: #4f46e5; color: #fff; }
+  .btn-known { background: #10b981; color: #fff; }
+  .btn-unknown { background: #f59e0b; color: #fff; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  footer {
+    background: #fff; border-top: 1px solid #e5e7eb;
+    padding: 10px 16px; font-size: 13px; color: #6b7280;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; bottom: 0;
+  }
+  .stat b { color: #4f46e5; }
+  .stat .ok { color: #10b981; }
+  .stat .no { color: #f59e0b; }
+  .reset {
+    color: #ef4444; font-size: 13px; background: none;
+    border: none; padding: 4px; flex: none; width: auto;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  发展心理学·简答题
+  <div class="progress-bar"><span id="progress"></span></div>
+</header>
+
+<main>
+  <div class="card" id="card">
+    <span class="tag" id="tag">第 1 题</span>
+    <div class="question" id="question">加载中...</div>
+    <div class="answer" id="answer"></div>
+    <div class="hint" id="hint">先自己回想一下，再点「显示答案」</div>
+  </div>
+
+  <div class="actions" id="actions">
+    <button class="btn-show" id="btnShow">显示答案</button>
+  </div>
+
+  <div class="actions" id="actionsAfter" style="display:none; margin-top:10px;">
+    <button class="btn-unknown" id="btnUnknown">不熟，再来</button>
+    <button class="btn-known" id="btnKnown">会了，下一题</button>
+  </div>
+</main>
+
+<footer>
+  <div class="stat">
+    已掌握 <b class="ok" id="knownCount">0</b> · 待复习 <b class="no" id="unknownCount">0</b>
+  </div>
+  <button class="reset" id="btnReset">重置进度</button>
+</footer>
+
+<script>
+/* ============ 题库：25 道简答题 ============ */
+const QUESTIONS = [
+  {
+    q: "发展心理学的研究对象是什么？",
+    a: "发展心理学是研究个体毕生心理发展的特点和规律的科学。人的心身在生命进程中表现出量和质两方面的变化，且与年龄联系紧密，既表现出连续性，又表现出发展的阶段性，形成年龄特征。"
+  },
+  {
+    q: "发展心理学研究心理发展的年龄特征，包括哪两个主要部分和四个有关方面？",
+    a: "两个主要部分：\n（1）人的认知发展的年龄特征，包括感觉、知觉、记忆、思维、想象等，思维发展的年龄特征研究是其中最主要的一环；\n（2）社会性发展的年龄特征，包括兴趣、动机、情感、价值观、自我意识、能力、性格等，性格发展的年龄特征研究是其中最主要的一环。\n四个有关方面：\n（1）心理发展的社会生活条件和教育条件；\n（2）生理因素的发展；\n（3）动作和活动的发展；\n（4）言语的发展。"
+  },
+  {
+    q: "什么是年龄特征？",
+    a: "人的心理和身体的发展在生命进程中表现出连续性和阶段性，因而个体在不同年龄阶段将表现出特定的特征。"
+  },
+  {
+    q: "什么是种系心理发展？",
+    a: "种系心理发展是指从动物到人类的心理演变过程，包括动物心理的进化过程和人类心理的进化过程。前者研究的是动物心理学（比较心理学），后者研究的是民族心理学（主要是原始人类心理学）和个体发展心理学。"
+  },
+  {
+    q: "促进人类动物祖先演变到人类有哪三个前提条件？",
+    a: "一是直立行走和手的发展；二是使用工具和制造工具；三是因交往需要产生语言。"
+  },
+  {
+    q: "人类心理的特点有哪些？",
+    a: "（1）有意识的心理；\n（2）社会性的心理；\n（3）有语言功能的心理。"
+  },
+  {
+    q: "什么是个体心理发展？",
+    a: "个体心理发展是指人的个体从受精卵开始到出生、成熟直至衰老的整个生命中，心理发生和发展的过程。"
+  },
+  {
+    q: "广义和狭义的发展心理学分别是什么？",
+    a: "广义的发展心理学是研究种系和个体心理发生与发展的科学。狭义的发展心理学是个体发展心理学。"
+  },
+  {
+    q: "个体心理发展的过程是什么？",
+    a: "个体心理发展的过程是一个社会化的过程。社会化是个体掌握和积极再现社会经验、社会联系和社会关系的过程。通过社会化，个体获得在社会中进行正常活动所必需的品质、价值观、信念以及社会所赞许的行为方式。"
+  },
+  {
+    q: "关于个体心理发展与种系心理发展关系的理论，谁最具代表性？其观点是什么？",
+    a: "霍尔的复演说最具代表性。他认为，应该把个体心理发展看作一系列或多或少的复演种系进化历史过程。从种系进化史的角度看，在个体生活的早期所表现出来的遗传特征比以后表现出来的遗传特征古老，因此前者不如后者稳定和强大。"
+  },
+  {
+    q: "发展心理学的研究主要涉及哪两个问题？",
+    a: "一个是有关心理发展原理或规律的理论问题；另一个是个体发展各年龄阶段的心理特征问题。"
+  },
+  {
+    q: "在人类心理发展的基本原理或规律问题上，各种心理学派别之间的争论可以归纳为哪五点？",
+    a: "（1）人类心理和行为是先天的还是后天的；\n（2）人类对于环境是主动的还是被动的；\n（3）人类心理发展是分阶段的还是连续的，是量变还是量变和质变的统一；\n（4）人类心理发展是普遍的还是特殊的，是多样的还是固定的；\n（5）发展的终点是开放的（发展变化能持续下去）还是有最终目标的。"
+  },
+  {
+    q: "发展心理学的理论研究涉及哪三个问题？",
+    a: "（1）关于遗传和环境（含教育）在心理发展上的作用问题；\n（2）关于心理发展的外因与内因问题；\n（3）关于心理不断发展和发展阶段的关系问题。"
+  },
+  {
+    q: "关于遗传和环境在心理发展上的作用问题，正确的观点是什么？",
+    a: "先天遗传给心理发展提供了可能性，后天环境将这种可能性变为现实性，两者缺一不可。因此，发展心理学既要研究人类心理的先天要素，也要研究自然环境、社会环境等文化背景与人类心理发展的交互作用。"
+  },
+  {
+    q: "关于心理发展的外因与内因问题，正确的观点是什么？",
+    a: "在人类心理发展上，外因和内因都要重视。人类身心发展是主动的，外因要通过内因才起作用。我们既要讲发展，又要强调内外因之间的关系和作用。"
+  },
+  {
+    q: "关于心理不断发展和发展阶段的关系问题，正确的观点是什么？",
+    a: "人类的心理既是不断发展的，又是有阶段性的。应将心理发展的连续性和阶段性统一起来，将相对主义的开放和理想化的终点统一起来，才能既科学地解释生命全程的心理持续发展趋势，又探讨不同年龄阶段心理发展的特征。"
+  },
+  {
+    q: "发展的连续性和阶段性中，渐进论和阶段论分别是什么？",
+    a: "渐进论认为，心理发展是一个量的积累的过程，是渐进式的、连续变化的过程，如行为主义、社会学习理论、信息加工理论。\n阶段论认为，心理发展是一个非连续的过程，有时候发展是平坦的，有时候又会发生质变，前后两个阶段表现出截然不同的心理特征。如皮亚杰的发生认识论、精神分析理论等，这些理论都是比较强调生物成熟因素对于心理发展具有重要影响。"
+  },
+  {
+    q: "心理发展是阶段性和连续性的统一，如何理解？",
+    a: "（1）心理发展速度的变化：心理并不是匀速发展的，有发展的快速期和进展较为缓慢的平稳期。由于发展速度上的这种不平衡，心理进展的连续性就被快速期中断，称为不连续的进程。也就是说，以发展的快速期作为分界点，发展的进程呈现出一个个不同的阶段。\n（2）阶段性与连续性的统一：心理的发展包含着量变和质变的矛盾运动过程。在心理发展的快速期，起主导作用的心理过程或心理特征发生急骤的更换，这就是一种质的飞跃，表现为阶段的划分。每一种心理过程或心理特征都不是在瞬间产生的，在质的飞跃之前有量的逐步积累；在新的心理过程或心理特征形成之后，还要继续发展积累新质，准备新的飞跃；即使在发展的快速期，也不是将前后发展进程截然分割，快速期本身也有一段发展过程，也包含着一定的渐变。所以说，在心理发展的任何时刻都体现着质变和量变的统一关系，都表现为阶段性与连续性的统一。"
+  },
+  {
+    q: "科学儿童心理学是如何诞生的？",
+    a: "科学儿童心理学产生于19世纪后半期。德国生理学家和实验心理学家普莱尔是儿童心理学的创始人。普莱尔的《儿童心理》（1882年出版）是第一部科学的、系统的儿童心理学著作。"
+  },
+  {
+    q: "儿童心理学的演变经历了哪几个时期？",
+    a: "（1）准备时期（19世纪后期之前）：在近代社会发展、近代自然科学发展、近代教育发展的推动下，经过许多科学家对儿童研究的促进，19世纪后期诞生了科学的儿童心理学。\n（2）形成时期（1882年至第一次世界大战）：在欧洲和美国出现一批心理学家，开始用观察和实验方法来研究儿童心理发展。\n（3）分化和发展时期（两次世界大战之间）：由于整个心理学的发展，儿童心理学研究工作和著作在数量和质量上都有了飞速发展，儿童心理学达到比较成熟的阶段。\n（4）演变和增新时期（第二次世界大战以后）：主要表现在两个方面，一是理论观点的演变，二是在具体研究工作上的演变。"
+  },
+  {
+    q: "从儿童发展到个体毕生全程发展的研究，霍尔、荣格、霍林沃思分别有什么贡献？",
+    a: "霍尔将儿童心理学研究的年龄范围扩大到青春期，即儿童心理学研究儿童从出生到成熟各个阶段心理发展的特征。\n荣格是最早对成年期心理发展进行研究的心理学家。\n美国心理学家霍林沃思最先提出要追求人的心理发展全貌，并于1927年出版了《发展心理学概论》一书，这是世界上第一部发展心理学著作。"
+  },
+  {
+    q: "发展心理学研究体制的进展体现在哪些方面？",
+    a: "（1）发展心理学研究体制的横向整体化变化：主要涉及发展心理学研究的广度与范围问题。主要体现出两个特点：①新的交叉学科不断出现；②发展心理学的研究范围向人生的两极延伸。\n（2）发展心理学研究体制的纵向整体化变化：是指发展心理学研究重点的变化，主要体现在人们逐渐把着眼点转向发展心理学的应用方面。"
+  },
+  {
+    q: "发展心理学研究方法的进展体现在哪些方面？",
+    a: "（1）系统科学原理成为发展心理学研究的方法论基础；\n（2）发展心理学研究思路的生态化取向；\n（3）重视纵向（或聚合交叉）的研究；\n（4）研究方式的跨学科和跨文化特点；\n（5）研究方法的综合化与研究手段的现代化；\n（6）研究结果的数量化特征。"
+  },
+  {
+    q: "发展心理学理论的发展体现在哪里？",
+    a: "当代发展心理学不仅日益关注气质和情绪等基本的心理学维度，而且日益关注高级的元认知过程，包括儿童对自己及他人的思维、情感和信念的知识，以及儿童对自身的认知及对社会行为的监控和调节。"
+  },
+  {
+    q: "发展心理学的价值是什么？",
+    a: "（1）从人类存在的角度说，“认识自己”是其永恒的追求；\n（2）从人类本能的角度说，“发展自己”是其根本需求。"
+  }
+];
+
+/* ============ 逻辑 ============ */
+const STORAGE_KEY = 'dev_psych_quiz_v1';
+let state = loadState();
+let current = null;
+let answerShown = false;
+
+const $ = id => document.getElementById(id);
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && Array.isArray(s.known) && Array.isArray(s.unknown)) return s;
+    }
+  } catch (e) {}
+  return { known: [], unknown: [] };
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function total() { return QUESTIONS.length; }
+
+function updateProgress() {
+  const known = state.known.length;
+  $('knownCount').textContent = known;
+  $('unknownCount').textContent = total() - known;
+  $('progress').style.width = (known / total() * 100) + '%';
+}
+
+function pickQuestion() {
+  let pool = state.unknown.slice();
+  if (pool.length === 0) {
+    pool = QUESTIONS.map((_, i) => i);
+    state.unknown = pool.slice();
+    state.known = [];
+  }
+  if (pool.length > 1 && current !== null) pool = pool.filter(i => i !== current);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function renderQuestion() {
+  current = pickQuestion();
+  answerShown = false;
+  state.unknown = state.unknown.filter(i => i !== current);
+  saveState();
+
+  const item = QUESTIONS[current];
+  $('tag').textContent = `第 ${current + 1} 题 / 共 ${total()} 题`;
+  $('question').textContent = item.q;
+  $('answer').textContent = item.a;
+  $('answer').classList.remove('show');
+  $('hint').style.display = 'block';
+  $('actions').style.display = 'flex';
+  $('actionsAfter').style.display = 'none';
+  updateProgress();
+}
+
+function showAnswer() {
+  if (answerShown) return;
+  answerShown = true;
+  $('answer').classList.add('show');
+  $('hint').style.display = 'none';
+  $('actions').style.display = 'none';
+  $('actionsAfter').style.display = 'flex';
+}
+
+function markKnown() {
+  if (!state.known.includes(current)) state.known.push(current);
+  state.unknown = state.unknown.filter(i => i !== current);
+  saveState();
+  renderQuestion();
+}
+
+function markUnknown() {
+  if (!state.unknown.includes(current)) state.unknown.push(current);
+  state.known = state.known.filter(i => i !== current);
+  saveState();
+  renderQuestion();
+}
+
+function resetProgress() {
+  if (!confirm('确定要重置所有进度吗？')) return;
+  state = { known: [], unknown: [] };
+  saveState();
+  renderQuestion();
+}
+
+$('btnShow').addEventListener('click', showAnswer);
+$('btnKnown').addEventListener('click', markKnown);
+$('btnUnknown').addEventListener('click', markUnknown);
+$('btnReset').addEventListener('click', resetProgress);
+
+if (state.unknown.length === 0 && state.known.length === 0) {
+  state.unknown = QUESTIONS.map((_, i) => i);
+  saveState();
+}
+renderQuestion();
+</script>
+</body>
+</html>
